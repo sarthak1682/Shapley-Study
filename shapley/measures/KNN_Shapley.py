@@ -33,16 +33,16 @@ class KNN_Shapley(Measure):
     def _get_shapley_value_np(self, X_train, y_train, X_test, y_test):
         N = len(X_train)
         M = len(X_test)
-        s = np.zeros((N, M))
+        s = np.zeros((N, M)) #Matrix filled with 0, N by M
 
         for i, (X, y) in enumerate(zip(X_test, y_test)):
-            diff = (X_train - X).reshape(N, -1)
-            dist = np.einsum('ij, ij->i', diff, diff)
-            idx = np.argsort(dist)
-            ans = y_train[idx]
-            s[idx[N - 1]][i] = float(ans[N - 1] == y) / N
+            diff = (X_train - X).reshape(N, -1) #Calc differences
+            dist = np.einsum('ij, ij->i', diff, diff) # Sum over Rows, column collapses N by M to N by 1
+            idx = np.argsort(dist) # Sort 
+            ans = y_train[idx] 
+            s[idx[N - 1]][i] = float(ans[N - 1] == y) / N # Calculate the Nth Shap
             cur = N - 2
-            for j in range(N - 1):
+            for j in range(N - 1): # Calc other Shap, defined recusively
                 s[idx[cur]][i] = s[idx[cur + 1]][i] + float(int(ans[cur] == y) - int(ans[cur + 1] == y)) / self.K * (min(cur, self.K - 1) + 1) / (cur + 1)
                 cur -= 1 
         return np.mean(s, axis=1)
